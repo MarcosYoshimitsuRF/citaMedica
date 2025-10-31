@@ -11,9 +11,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * Entidad que mapea la tabla 'Pacientes'.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -35,27 +32,23 @@ public class Paciente {
     @Column(nullable = false, length = 20)
     private String dni;
 
-    // Campo de estado (Soft Delete)
+    @Column(length = 15)
+    private String telefono; // <-- CAMPO AÑADIDO
+
     @Column(name = "esta_activo", nullable = false)
     private boolean estaActivo;
 
-    /**
-     * Relación Uno-a-Uno con Usuarios (clave foránea).
-     */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario", referencedColumnName = "id_usuario", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Usuario usuario;
 
-    // ------------------------------------------------------------------
-    // NUEVA RELACIÓN: Citas (Inversa)
-    // ------------------------------------------------------------------
-    /**
-     * (Punto 4.1.6) Relación Uno-a-Muchos con Citas.
-     * mappedBy indica la propiedad dueña de la relación en Cita.java.
-     */
     @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore // Ignorar al serializar para evitar bucles infinitos
+    @JsonIgnore
     private List<Cita> citas;
-    // ------------------------------------------------------------------
+
+    // Getter explícito para resolver el problema de compilación de Lombok/IDE.
+    public String getTelefono() {
+        return telefono;
+    }
 }
