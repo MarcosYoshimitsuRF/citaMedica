@@ -6,6 +6,7 @@ import com.citamed.domain.schedule.HorarioMedico;
 import com.citamed.domain.schedule.HorarioMedicoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; // <-- Importación necesaria
 
 import java.sql.Time;
 import java.util.List;
@@ -13,8 +14,7 @@ import java.util.stream.Collectors;
 
 /**
  * Servicio (capa de negocio) para la gestión de Horarios.
- * Es llamado por el Controlador y llama al Repositorio (SPs).
- * Incluye la validación de negocio de los rangos horarios.
+ * (CORREGIDO: Añadido @Transactional al findByMedico).
  */
 @Service
 @RequiredArgsConstructor
@@ -27,6 +27,8 @@ public class HorarioService {
      * @param idMedico El ID del médico.
      * @return Lista de DTOs de respuesta.
      */
+    // --- CORRECCIÓN: @Transactional es OBLIGATORIO para SPs de SELECT ---
+    @Transactional
     public List<HorarioMedicoResponseDTO> findByMedico(Integer idMedico) {
         // 1. Llama al SP
         List<HorarioMedico> horarios = horarioMedicoRepository.spAdminObtenerHorariosPorMedico(idMedico);
@@ -39,13 +41,12 @@ public class HorarioService {
 
     /**
      * Crea o actualiza (Upsert) un horario para un médico.
-     * @param idMedico El ID del médico (de la URL).
-     * @param request DTO con los datos del horario (del body).
+     * (Ya es transaccional)
      */
+    @Transactional
     public void upsert(Integer idMedico, UpsertHorarioRequestDTO request) {
 
-        // (Orden 3) Validación de Negocio (Punto 3.4.7 DTO Nota)
-        // El SP tiene un CHK, pero validamos aquí para dar un error 400 claro.
+        // Validación de Negocio: horaInicio < horaFin
         if (!request.getHoraInicio().before(request.getHoraFin())) {
             throw new IllegalArgumentException("La hora de inicio debe ser anterior a la hora de fin.");
         }
@@ -61,8 +62,9 @@ public class HorarioService {
 
     /**
      * Realiza un Hard Delete de un horario.
-     * @param idHorario El ID del horario a eliminar.
+     * (Ya es transaccional)
      */
+    @Transactional
     public void delete(Integer idHorario) {
         // Llama al SP de eliminación (Hard Delete)
         horarioMedicoRepository.spAdminEliminarHorario(idHorario);
@@ -71,12 +73,12 @@ public class HorarioService {
 
     /**
      * Método de mapeo privado (Rol Senior).
-     * Convierte una Entidad 'HorarioMedico' a un 'HorarioMedicoResponseDTO'.
      */
     private HorarioMedicoResponseDTO mapToResponseDTO(HorarioMedico horario) {
         HorarioMedicoResponseDTO dto = new HorarioMedicoResponseDTO();
         dto.setIdHorario(horario.getIdHorario());
-        dto.setIdMedico(horario.getMedico().getIdMedico()); // Obtiene el ID del objeto Medico
+        // Se asume que el médico existe, por eso se llama getMedico()
+        dto.setIdMedico(horario.getMedico().getIdMedico());
         dto.setDiaSemana(horario.getDiaSemana());
         dto.setHoraInicio(horario.getHoraInicio());
         dto.setHoraFin(horario.getHoraFin());
