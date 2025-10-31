@@ -11,19 +11,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * Enumeración para los posibles estados de una cita.
- * Coincide con el ENUM de la BD: CONFIRMADA, CANCELADA_PACIENTE, CANCELADA_ADMIN.
- */
-enum EstadoCita {
-    CONFIRMADA,
-    CANCELADA_PACIENTE,
-    CANCELADA_ADMIN
-}
 
-/**
- * Entidad que mapea la tabla 'Citas'.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

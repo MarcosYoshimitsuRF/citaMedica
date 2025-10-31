@@ -53,6 +53,10 @@ public class DoctorService {
                 .collect(Collectors.toList());
     }
 
+    public DoctorResponseDTO getDoctorDTOFromEntity(Medico medico) {
+        return mapToResponseDTO(medico);
+    }
+
     // ... (mapToResponseDTO)
     private DoctorResponseDTO mapToResponseDTO(Medico medico) {
         DoctorResponseDTO dto = new DoctorResponseDTO();
