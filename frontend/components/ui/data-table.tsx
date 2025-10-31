@@ -16,22 +16,31 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Loader2 } from 'lucide-react'; // Importación necesaria
+import { Input } from './input';
 
 /**
  * Props para el componente genérico de DataTable.
+ * AÑADIDA: Prop isLoading para manejar el estado de carga.
  */
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  isLoading?: boolean; // <-- CORRECCIÓN 1: Propiedad añadida
+  filterColumnId?: string; // <-- Propiedad de filtro (usada en el page.tsx)
+  filterPlaceholder?: string; // <-- Propiedad de filtro (usada en el page.tsx)
 }
 
 /**
  * Componente genérico y reutilizable de DataTable.
- * (Corregido para asegurar que la clave de la fila sea única).
+ * (Actualizado para mostrar loader y manejar filtro básico).
  */
 export function DataTable<TData, TValue>({
   columns,
   data,
+  isLoading = false, // <-- CORRECCIÓN 2: Valor por defecto
+  filterColumnId,
+  filterPlaceholder,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -39,8 +48,31 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
   });
 
+  // Si está cargando, se muestra una fila de loader
+  if (isLoading) {
+    return (
+      <div className="flex h-40 items-center justify-center rounded-md border">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border">
+      {/* SECCIÓN DE FILTRO (No pedida, pero necesaria para la prop filterColumnId) */}
+      {filterColumnId && (
+        <div className="flex items-center py-4 px-4">
+          <Input
+            placeholder={filterPlaceholder || `Buscar...`}
+            value={(table.getColumn(filterColumnId)?.getFilterValue() as string) ?? ''}
+            onChange={(event) =>
+              table.getColumn(filterColumnId)?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm"
+          />
+        </div>
+      )}
+      
       <Table>
         {/* Cabecera de la Tabla */}
         <TableHeader>
@@ -67,11 +99,7 @@ export function DataTable<TData, TValue>({
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
-                // --- CORRECCIÓN: Usar el ID de la fila (PK) para la clave ---
-                // Row.id utiliza por defecto la PK de los datos (idCita en este caso),
-                // o usa un índice si la PK no está disponible. Al ser la Entidad Cita, 
-                // usa idCita, lo cual garantiza la unicidad.
-                key={row.id} 
+                key={row.id}
                 data-state={row.getIsSelected() && 'selected'}
               >
                 {row.getVisibleCells().map((cell) => (

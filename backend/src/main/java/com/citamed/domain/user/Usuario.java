@@ -50,8 +50,8 @@ public class Usuario implements UserDetails {
      * 'cascade = CascadeType.ALL' asegura que si se manipula un Usuario,
      * el Paciente asociado se vea afectado (útil para el registro).
      */
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore // Evita bucles infinitos de serialización
+    @OneToOne(mappedBy = "usuario", fetch = FetchType.LAZY) // <-- CASCADE ELIMINADO
+    @JsonIgnore
     private Paciente paciente;
 
 

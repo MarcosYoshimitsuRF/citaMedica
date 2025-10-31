@@ -8,8 +8,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { isAxiosError } from 'axios';
+import api from '@/lib/api';
 
-// Importações do Shadcn UI
+// Shadcn Components
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -29,11 +31,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
-// Importaciones de API y el Type Guard de Axios
-import api from '@/lib/api';
-import { isAxiosError } from 'axios'; // <--- CORRECCIÓN
-
-// Esquema de validación del Zod (Punto 1.11.7)
+// Esquema de validación Zod (CORRECCIÓN: Añadir teléfono)
 const formSchema = z.object({
   dni: z
     .string()
@@ -41,6 +39,10 @@ const formSchema = z.object({
     .regex(/^[0-9]+$/, 'El DNI debe contener solo números.'),
   nombres: z.string().min(2, 'Por favor, ingrese un nombre válido.'),
   apellidos: z.string().min(2, 'Por favor, ingrese un apellido válido.'),
+  
+  // CORRECCIÓN: Campo teléfono añadido al esquema (opcional)
+  telefono: z.string().max(15, 'El teléfono es demasiado largo.').optional(),
+  
   email: z.string().email('Por favor, ingrese un email válido.'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
 });
@@ -49,69 +51,55 @@ const formSchema = z.object({
 type RegisterFormValues = z.infer<typeof formSchema>;
 
 /**
- * Página de Registro de Pacientes (Punto 1.11.6).
+ * Página de Registro de Pacientes.
  */
 export default function RegisterPage() {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
 
-  // 1. Definición del Formulario (RHF + Zod)
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       dni: '',
       nombres: '',
       apellidos: '',
+      // Inicializar el nuevo campo
+      telefono: '', 
       email: '',
       password: '',
     },
   });
 
-  // 2. Función de Envio (Punto 1.11.8)
   async function onSubmit(values: RegisterFormValues) {
     setIsPending(true);
     try {
-      // 2a. Llamar al endpoint del backend
-      await api.post('/auth/register', values);
+      // Usamos los valores tal como vienen, incluyendo teléfono
+      await api.post('/auth/register', values); 
 
-      // 2b. Mostrar notificación de éxito
       toast.success('Registro exitoso!', {
         description: 'Serás redirigido al login.',
       });
 
-      // 2c. Redireccionar a /login (Punto 1.11.8)
       router.push('/login');
       
-    } catch (error) { // <--- CORRECCIÓN: 'error' es 'unknown'
+    } catch (error) {
       setIsPending(false);
       
-      // 2d. Manejo de Error (Sin 'any')
-      // Usamos el type guard 'isAxiosError' para verificar el tipo
-      if (isAxiosError(error)) {
-        // Ahora es seguro acceder a 'error.response'
-        const errorMessage = error.response?.data?.message as string;
-
-        if (errorMessage && errorMessage.includes('El email ya está registrado')) {
-          toast.error('Error en el Registro', {
-            description: 'Este email ya está en uso. Intente otro.',
-          });
-          form.setFocus('email');
-        } else {
-          toast.error('Error en el Registro', {
-            description: 'No fue posible crear su cuenta. Por favor, intente nuevamente.',
-          });
+      let errorMessage = 'Email o DNI ya están registrados.';
+      if (isAxiosError(error) && error.response?.data) {
+        const data = error.response.data as { message?: string };
+        if (data.message?.includes('El email ya está registrado')) {
+            errorMessage = 'Este email ya está en uso. Intente otro.';
+            form.setFocus('email');
+        } else if (data.message?.includes('Duplicate entry')) {
+            errorMessage = 'El DNI o el Email ya existen.';
         }
-      } else {
-        // Manejo de errores genéricos
-        toast.error('Error Inesperado', {
-          description: 'Ha ocurrido un error. Por favor, intente nuevamente.',
-        });
-        console.error("Error no controlado en registro:", error);
       }
+      
+      toast.error('Error en el Registro', { description: errorMessage });
     }
   }
 
-  // 3. Renderización de la UI (Punto 1.11.7)
   return (
     <Card className="w-full max-w-lg shadow-lg">
       <CardHeader className="text-center">
@@ -134,7 +122,7 @@ export default function RegisterPage() {
                   <FormLabel>DNI (Documento de Identidad)</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Ej: 12345678"
+                      placeholder="Ex: 12345678"
                       {...field}
                       disabled={isPending}
                       maxLength={8}
@@ -146,7 +134,7 @@ export default function RegisterPage() {
             />
             
             {/* Fila 2: Nombres y Apellidos (Grid) */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="nombres"
@@ -174,8 +162,28 @@ export default function RegisterPage() {
                 )}
               />
             </div>
+
+            {/* Fila 3: Teléfono (NUEVA FILA) */}
+            <FormField
+              control={form.control}
+              name="telefono"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Teléfono (Opcional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ej: 999123456"
+                      {...field}
+                      disabled={isPending}
+                      value={field.value || ''} // Manejar valor nulo/opcional
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
-            {/* Fila 3: Email */}
+            {/* Fila 4 (Original 3): Email */}
             <FormField
               control={form.control}
               name="email"
@@ -195,7 +203,7 @@ export default function RegisterPage() {
               )}
             />
             
-            {/* Fila 4: Contraseña */}
+            {/* Fila 5 (Original 4): Contraseña */}
             <FormField
               control={form.control}
               name="password"

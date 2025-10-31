@@ -11,8 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 // Tipos y columnas
-import { getPacienteCitasColumns, type CitaPacienteDTO } from './columns';
 import { Button } from '@/components/ui/button';
+import { CitaPacienteDTO } from './types';
+import { getPacienteCitasColumns } from './columns';
 
 
 /**
@@ -88,6 +89,8 @@ export default function MisCitasPage() {
         <DataTable
           columns={columns}
           data={citas}
+          filterColumnId="medicoApellidos"
+          filterPlaceholder="Buscar por médico..."
         />
         {citas.length === 0 && (
           <div className="flex flex-col items-center justify-center p-10 text-muted-foreground">

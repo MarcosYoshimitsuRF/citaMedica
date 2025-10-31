@@ -3,8 +3,8 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { CellActions } from './cell-actions'; 
 import { type CitaPacienteDTO } from './types'; 
-import { CellActions } from './cell-actions';
 
 /**
  * Define la interfaz para las props del callback.
@@ -34,9 +34,8 @@ export const getPacienteCitasColumns = ({ onSuccess }: ColumnCallbacks): ColumnD
     accessorKey: 'fechaHora',
     header: 'Fecha',
     cell: ({ row }) => {
-      // Usar la fecha para mostrar el valor, pero NO como key.
       const date = new Date(row.original.fechaHora);
-      return <span>{format(date, 'PPP')}</span>; 
+      return <span>{format(date, 'PPP')}</span>; // Ej: Oct 31, 2025
     },
   },
 
@@ -70,5 +69,3 @@ export const getPacienteCitasColumns = ({ onSuccess }: ColumnCallbacks): ColumnD
     cell: ({ row }) => <CellActions row={row} onSuccess={onSuccess} />,
   },
 ];
-
-export { CitaPacienteDTO };

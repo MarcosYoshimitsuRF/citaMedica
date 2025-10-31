@@ -26,11 +26,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
 
     /**
      * (Punto 6.1.3) Llama a sp_Admin_EliminarPaciente (Soft Delete).
-     * El SP busca el id_usuario asociado al id_paciente y pone esta_activo = 0.
+     * CORRECCIÓN: Aseguramos @Modifying y @Transactional para forzar la ejecución del SP.
      */
     @Modifying @Transactional
     @Procedure(procedureName = "sp_Admin_EliminarPaciente")
     void spAdminEliminarPaciente(
-            @Param("p_id_paciente") Integer idPaciente
+            @Param("p_id_paciente") Integer idPaciente // <-- Mapeo de parámetro
     );
 }

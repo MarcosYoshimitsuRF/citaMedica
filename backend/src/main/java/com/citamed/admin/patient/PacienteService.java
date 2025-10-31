@@ -24,8 +24,9 @@ public class PacienteService {
 
     /**
      * Lista todos los pacientes (activos/inactivos) llamando al SP.
+     * Se usa @Transactional para asegurar la apertura de conexión de lectura del SP.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<PacienteResponseDTO> findAll() {
         // Llama al SP que devuelve la entidad Paciente enriquecida con datos de Usuario
         List<Paciente> pacientes = pacienteRepository.spAdminListarPacientes();
@@ -67,10 +68,11 @@ public class PacienteService {
         dto.setIdPaciente(paciente.getIdPaciente());
         dto.setDni(paciente.getDni());
         dto.setNombres(paciente.getNombres());
+        // CORRECCIÓN: Uso de getApellidos()
         dto.setApellidos(paciente.getApellidos());
-        dto.setTelefono(paciente.getTelefono()); // <-- La llamada es correcta
+        dto.setTelefono(paciente.getTelefono());
 
-        // Datos de Usuario (se acceden a través de la relación)
+        // Datos de Usuario
         if (paciente.getUsuario() != null) {
             dto.setEmail(paciente.getUsuario().getEmail());
             dto.setEstaActivo(paciente.getUsuario().isEstaActivo());

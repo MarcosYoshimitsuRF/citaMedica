@@ -11,7 +11,6 @@ import java.util.List;
 
 /**
  * Repositorio para la entidad Paciente.
- * (Actualizado para incluir los SPs de la FASE 6: Gestión de Pacientes).
  */
 @Repository
 public interface PacienteRepository extends JpaRepository<Paciente, Integer> {
@@ -32,17 +31,12 @@ public interface PacienteRepository extends JpaRepository<Paciente, Integer> {
     // --- MÉTODOS DE ADMINISTRACIÓN (FASE 6) ---
     // ---------------------------------------------------
 
-    /**
-     * (Punto 6.1.1) Llama a sp_Admin_ListarPacientes.
-     * Devuelve el historial de pacientes enriquecido (con email/estado).
-     */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true) // <-- CORRECCIÓN FINAL
     @Procedure(procedureName = "sp_Admin_ListarPacientes")
     List<Paciente> spAdminListarPacientes();
 
     /**
      * (Punto 6.1.2) Llama a sp_Admin_ActualizarPaciente.
-     * Actualiza los datos demográficos del paciente.
      */
     @Modifying @Transactional
     @Procedure(procedureName = "sp_Admin_ActualizarPaciente")
