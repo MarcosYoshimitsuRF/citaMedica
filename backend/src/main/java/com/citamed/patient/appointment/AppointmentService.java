@@ -4,11 +4,11 @@ import com.citamed.domain.appointment.Cita;
 import com.citamed.domain.appointment.CitaRepository;
 import com.citamed.patient.dtos.AgendarCitaRequest;
 import com.citamed.patient.dtos.CitaResponseDTO;
-import com.citamed.patient.doctor.DoctorService; // Importar servicio de Doctor
+import com.citamed.patient.doctor.DoctorService;
 import com.citamed.patient.dtos.DoctorResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional; // <-- Importación necesaria
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,16 +16,17 @@ import java.util.stream.Collectors;
 /**
  * Servicio que maneja la lógica de agendamiento y gestión de citas
  * para el rol PACIENTE.
+ * (Corregido para incluir @Transactional en findCitasByPaciente).
  */
 @Service
 @RequiredArgsConstructor
 public class AppointmentService {
 
     private final CitaRepository citaRepository;
-    private final DoctorService doctorService; // Inyectado para mapeo
+    private final DoctorService doctorService;
 
     /**
-     * Agenda una nueva cita (Punto 4.3.5).
+     * Agenda una nueva cita (FASE 4).
      */
     @Transactional
     public void agendarCita(Integer idPaciente, AgendarCitaRequest request) {
@@ -38,15 +39,16 @@ public class AppointmentService {
 
     /**
      * (Punto 5.2.1) Obtiene todas las citas de un paciente.
+     * CORRECCIÓN: Se añade @Transactional.
      */
-    @Transactional(readOnly = true)
+    @Transactional // <-- CORRECCIÓN AÑADIDA
     public List<CitaResponseDTO> findCitasByPaciente(Integer idPaciente) {
         // Llama al SP que filtra por id_paciente (Segregación de Datos)
         List<Cita> citas = citaRepository.spObtenerCitasPorPaciente(idPaciente);
 
         // Mapea la lista de Entidades a DTOs enriquecidos
         return citas.stream().map(cita -> {
-            // Reutilizamos el mapeo de Medico (aunque aquí solo necesitamos el ID/Nombres)
+            // Reutilizamos el mapeo de Medico
             DoctorResponseDTO doctorDto = doctorService.getDoctorDTOFromEntity(cita.getMedico());
 
             return CitaResponseDTO.builder()
@@ -63,11 +65,9 @@ public class AppointmentService {
 
     /**
      * (Punto 5.2.1) Cancela una cita de paciente.
-     * El idPaciente se usa en el Repositorio para la validación de propiedad.
      */
     @Transactional
     public void cancelarCitaPaciente(Integer idCita, Integer idPaciente) {
-        // El SP verifica que la cita pertenezca al paciente antes de actualizar
         citaRepository.spCancelarCitaPaciente(idCita, idPaciente);
     }
 }

@@ -27,7 +27,7 @@ interface DataTableProps<TData, TValue> {
 
 /**
  * Componente genérico y reutilizable de DataTable.
- * Basado en la documentación de Shadcn.
+ * (Corregido para asegurar que la clave de la fila sea única).
  */
 export function DataTable<TData, TValue>({
   columns,
@@ -67,7 +67,11 @@ export function DataTable<TData, TValue>({
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
-                key={row.id}
+                // --- CORRECCIÓN: Usar el ID de la fila (PK) para la clave ---
+                // Row.id utiliza por defecto la PK de los datos (idCita en este caso),
+                // o usa un índice si la PK no está disponible. Al ser la Entidad Cita, 
+                // usa idCita, lo cual garantiza la unicidad.
+                key={row.id} 
                 data-state={row.getIsSelected() && 'selected'}
               >
                 {row.getVisibleCells().map((cell) => (
