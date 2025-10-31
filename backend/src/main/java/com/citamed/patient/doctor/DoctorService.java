@@ -7,10 +7,9 @@ import com.citamed.domain.office.Consultorio;
 import com.citamed.patient.dtos.DoctorResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional; // <-- Importación necesaria
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,13 +22,14 @@ import java.util.stream.Collectors;
 public class DoctorService {
 
     private final MedicoRepository medicoRepository;
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     /**
      * Obtiene la lista de médicos disponibles para el paciente.
-     * Llama a sp_ListarMedicosPublico (Punto 4.2.3).
+     * Llama a sp_ListarMedicosPublico.
      */
-    @Transactional(readOnly = true)
+    // --- CORRECCIÓN FINAL: Transactional sin readOnly=true ---
+    // Esto asegura que se abra una transacción completa para el SP de consulta
+    @Transactional
     public List<DoctorResponseDTO> findAllPublic() {
         // Llama al SP que filtra por esta_activo = 1
         List<Medico> medicos = medicoRepository.spListarMedicosPublico();
@@ -42,30 +42,18 @@ public class DoctorService {
 
     /**
      * Implementa la lógica del Slot Generator.
-     * Llama a sp_ObtenerSlotsDisponibles (Punto 4.2.4).
-     *
-     * @param idMedico ID del médico.
-     * @param fecha Fecha para buscar disponibilidad.
-     * @return Lista de strings con los slots disponibles (Ej: "09:00").
+     * Llama a sp_ObtenerSlotsDisponibles.
      */
     @Transactional
     public List<String> getAvailableSlots(Integer idMedico, LocalDate fecha) {
-        // 1. Llama al SP, el cual realiza toda la lógica de negocio
-        // (Encontrar horario, generar slots de 30 min, filtrar CONFIRMADAS)
         List<String> slotsRaw = medicoRepository.spObtenerSlotsDisponibles(idMedico, fecha);
 
-        // 2. Mapeamos el resultado TIME (HH:mm:ss) a formato simple HH:mm para el frontend
         return slotsRaw.stream()
-                .map(timeStr -> {
-                    // El resultado es "HH:mm:ss", lo truncamos a "HH:mm"
-                    return timeStr.substring(0, 5);
-                })
+                .map(timeStr -> timeStr.substring(0, 5))
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Método de mapeo privado (Entidad Medico -> DoctorResponseDTO).
-     */
+    // ... (mapToResponseDTO)
     private DoctorResponseDTO mapToResponseDTO(Medico medico) {
         DoctorResponseDTO dto = new DoctorResponseDTO();
         dto.setIdMedico(medico.getIdMedico());
@@ -73,7 +61,6 @@ public class DoctorService {
         dto.setApellidos(medico.getApellidos());
         dto.setEspecialidad(medico.getEspecialidad());
 
-        // Incluir la info de consultorio si existe
         if (medico.getConsultorio() != null) {
             Consultorio consultorio = medico.getConsultorio();
             ConsultorioInfoDTO consultorioDTO = new ConsultorioInfoDTO();

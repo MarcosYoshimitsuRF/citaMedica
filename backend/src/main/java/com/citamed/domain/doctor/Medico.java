@@ -1,6 +1,6 @@
 package com.citamed.domain.doctor;
 
-import com.citamed.domain.appointment.Cita; // Importación necesaria
+import com.citamed.domain.appointment.Cita;
 import com.citamed.domain.office.Consultorio;
 import com.citamed.domain.schedule.HorarioMedico;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -14,6 +14,7 @@ import java.util.List;
 
 /**
  * Entidad que mapea la tabla 'Medicos'.
+ * (CORREGIDO: Ajuste de JoinColumn para evitar error 'id_consultorio' not found).
  */
 @Data
 @NoArgsConstructor
@@ -36,33 +37,31 @@ public class Medico {
     @Column(nullable = false, length = 100)
     private String especialidad;
 
-    // Campo de estado (Soft Delete)
     @Column(name = "esta_activo", nullable = false)
-    private boolean estaActivo;
+    private boolean estaActivo = true;
 
     /**
-     * Relación Muchos-a-Uno con Consultorio.
+     * (Punto 3.1.3) Relación Muchos-a-Uno con Consultorio.
+     * CORRECCIÓN: Se cambia FetchType.LAZY a EAGER y se ajusta el JoinColumn.
+     * El error era que Hibernate no podía encontrar la FK.
+     * Se soluciona forzando la carga y eliminando la ambigüedad de insert/update.
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_consultorio", referencedColumnName = "id_consultorio")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_consultorio_asignado") // <-- Usamos el nombre real de la FK
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Consultorio consultorio;
 
     /**
-     * Relación Uno-a-Muchos con Horarios_Medicos.
+     * Relación Uno-a-Muchos (Inversa) con HorarioMedico.
      */
-    @OneToMany(mappedBy = "medico", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore // Ignorar al serializar
+    @OneToMany(mappedBy = "medico", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonIgnore
     private List<HorarioMedico> horarios;
 
-    // ------------------------------------------------------------------
-    // NUEVA RELACIÓN: Citas (Inversa)
-    // ------------------------------------------------------------------
     /**
-     * (Punto 4.1.6) Relación Uno-a-Muchos con Citas.
+     * Relación Uno-a-Muchos (Inversa) con Citas.
      */
     @OneToMany(mappedBy = "medico", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore // Ignorar al serializar
+    @JsonIgnore
     private List<Cita> citas;
-    // ------------------------------------------------------------------
 }
