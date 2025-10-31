@@ -6,13 +6,14 @@ import com.citamed.domain.patient.Paciente;
 import com.citamed.patient.dtos.CitaResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional; // <-- Importación necesaria
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * Servicio que maneja la gestión global de citas para el rol ADMIN.
+ * (CORREGIDO: Añadido @Transactional al método findAllCitas).
  */
 @Service
 @RequiredArgsConstructor
@@ -22,12 +23,12 @@ public class AdminCitasService {
 
     /**
      * (Punto 5.2.2) Obtiene todas las citas del sistema (con filtros opcionales).
+     * CORRECCIÓN: Se elimina (readOnly = true) para asegurar la transacción completa.
      */
-    @Transactional(readOnly = true)
+    @Transactional // <-- CORRECCIÓN AÑADIDA
     public List<CitaResponseDTO> findAllCitas(
             String fechaInicio, String fechaFin, Integer idMedico) {
 
-        // Llama al SP que devuelve el historial completo
         List<Cita> citas = citaRepository.spAdminListarTodasCitas(fechaInicio, fechaFin, idMedico);
 
         // Mapea la lista de Entidades a DTOs enriquecidos para Admin
@@ -46,7 +47,8 @@ public class AdminCitasService {
                     .pacienteNombres(paciente.getNombres())
                     .pacienteApellidos(paciente.getApellidos())
                     .pacienteDni(paciente.getDni())
-                    .pacienteEmail(paciente.getUsuario().getEmail()) // Se accede al email a través de la relación
+                    // Es seguro acceder al usuario/email porque el JOIN se hace en el SP/Mapeo
+                    .pacienteEmail(paciente.getUsuario().getEmail())
                     .build();
         }).collect(Collectors.toList());
     }
@@ -56,7 +58,6 @@ public class AdminCitasService {
      */
     @Transactional
     public void adminCancelarCita(Integer idCita) {
-        // Llama al SP de cancelación de Admin (sin verificación de propiedad)
         citaRepository.spAdminCancelarCita(idCita);
     }
 }
