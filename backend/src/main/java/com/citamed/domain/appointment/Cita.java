@@ -16,10 +16,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "Citas", uniqueConstraints = {
-        // Replica la restricción única de la BD (anti doble-reserva)
-        @UniqueConstraint(columnNames = {"id_medico", "fecha_hora"})
-})
+@Table(name = "Citas"/*, uniqueConstraints = {
+        // ELIMINAMOS ESTA LINEA PARA QUE HIBERNATE NO LA IMPONGA
+        // @UniqueConstraint(columnNames = {"id_medico", "fecha_hora"})
+}*/)
 public class Cita {
 
     @Id

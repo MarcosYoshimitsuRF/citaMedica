@@ -34,8 +34,9 @@ export const getPacienteCitasColumns = ({ onSuccess }: ColumnCallbacks): ColumnD
     accessorKey: 'fechaHora',
     header: 'Fecha',
     cell: ({ row }) => {
+      // Usar la fecha para mostrar el valor, pero NO como key.
       const date = new Date(row.original.fechaHora);
-      return <span>{format(date, 'PPP')}</span>; // Ej: Oct 31, 2025
+      return <span>{format(date, 'PPP')}</span>; 
     },
   },
 
